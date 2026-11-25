@@ -4,7 +4,7 @@ Solution complète de suivi opérationnel des signalements environnementaux dép
 
 ## Besoin métier
 
-Les services chargés de la police de l'environnement, de la biodiversité ou du contrôle territorial reçoivent chaque jour des alertes, doléances et constats directs par téléphone, courriel, courrier postal ou accueil physique. L'application assure la traçabilité complète de ces saisines, de leur enregistrement initial jusqu'à la clôture après intervention de terrain, tout en garantissant le cloisonnement strict des dossiers entre agents et encadrement.
+Les services chargés de la police de l'environnement reçoivent chaque jour des alertes, doléances et constats directs par téléphone, courriel, courrier postal ou accueil physique. L'application assure la traçabilité complète de ces saisines, de leur enregistrement initial jusqu'à la clôture après intervention de terrain, tout en garantissant le cloisonnement strict des dossiers entre agents et encadrement.
 
 Chaque utilisateur interagit uniquement à travers des interfaces web intégrées et ergonomiques, sans manipuler directement les tableaux de données brutes.
 
