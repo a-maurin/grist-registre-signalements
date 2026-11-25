@@ -39,14 +39,31 @@ La sécurité s'appuie sur les droits granulaires natifs de Grist via l'attribut
 
 Une sauvegarde JSON des règles ACL existantes est automatiquement enregistrée dans le dossier local `sauvegardes_acl/` avant chaque déploiement de droits, avec restauration possible via `python3 configurer_droits_signalements.py --restaurer <fichier.json>`.
 
-## Installation et déploiement pas à pas
+## Installation et déploiement dans un nouveau service
 
-Les prérequis se limitent à Python 3.10 ou supérieur et aux bibliothèques `requests` et `pytest`.
+### Logique d'ensemble
 
-1. Importez le classeur modèle vierge [templates/registre_signalements_modele.grist](templates/registre_signalements_modele.grist) dans votre espace de travail Grist cible (menu *Importer un document*), relevez son `DOC_ID` et son `DOC_URL`, puis vérifiez que votre compte possède le rôle `Propriétaire`.
-2. Dans la table `Referentiel_Agents` (via *Données brutes*), remplacez les deux fiches d'exemple (`Agent Exemple` et `Gestionnaire Exemple`) par les agents et gestionnaires réels de votre service avec leur adresse courriel Grist exacte.
-3. Copiez [config_local.example.py](config_local.example.py) vers `config_local.py` (ignoré par Git) et adaptez les paramètres de votre service (`ORG_ID`, `DOC_ID`, `DOC_URL`, `SERVICE_NOM`, `CSV_PREFIX`, `EMAIL_PLACEHOLDER`, `AGENTS_INITIAUX`, `EMAILS_PROPRIETAIRES`, `EMAILS_GESTIONNAIRES`, `CHOIX_ENCADRANT` et `ENCADRANT_PAR_DEFAUT`), puis fournissez vos identifiants API via les variables d'environnement `GRIST_API_URL` et `GRIST_API_KEY` (ou un fichier `.env` local non versionné).
-4. Exécutez les scripts de paramétrage sur le classeur importé dans l'ordre suivant (le script `creer_registre_signalements.py` n'est pas nécessaire lorsque vous partez du modèle importé) :
+Le déploiement dans un nouveau service repose sur l'import préalable du classeur modèle vierge [templates/registre_signalements_modele.grist](templates/registre_signalements_modele.grist). Ce fichier fournit d'emblée les quatre tables, leurs colonnes, leurs formules ainsi que les six vues et leurs identifiants attendus, ce qui dispense d'exécuter `creer_registre_signalements.py`.
+
+Les cinq scripts `configurer_*.py` appliquent ensuite la configuration propre à votre service par appels à l'API Grist. L'ensemble des paramètres locaux reste isolé dans `config_local.py` et `.env`, tous deux ignorés par Git, tandis qu'une copie de sauvegarde des règles ACL est enregistrée dans `sauvegardes_acl/` avant toute modification des droits. En exploitation, les autorisations fines découlent directement de la colonne `Referentiel_Agents.Role` (`Agent` ou `Gestionnaire`) sans aucun besoin de relancer les scripts à chaque mouvement d'effectif.
+
+### Prérequis
+
+Sur votre instance Grist ou La Suite numérique, le déploiement requiert un compte administrateur disposant du rôle `Propriétaire` sur le document cible ainsi qu'une clé API Grist personnelle. L'instance doit autoriser les widgets personnalisés et les postes utilisateurs doivent pouvoir charger `custom-widget-builder` et `grist-plugin-api.js`, tout en disposant d'un client de messagerie configuré pour ouvrir les liens `mailto:` générés lors des alertes.
+
+Sur le poste qui exécute l'installation, il suffit d'avoir récupéré ce dépôt Git et de disposer de Python 3.10 ou supérieur avec la bibliothèque `requests` (ainsi que `pytest` en option pour exécuter la suite de tests hors ligne). Ce poste n'est sollicité que lors du déploiement initial ou des mises à jour ultérieures.
+
+### Déploiement pas à pas en six étapes
+
+1. Importez le classeur modèle vierge [templates/registre_signalements_modele.grist](templates/registre_signalements_modele.grist) dans l'espace de travail Grist de votre service via le menu *Importer un document*. Relevez ensuite l'identifiant du document (`DOC_ID`) et son adresse complète (`DOC_URL`) dans la barre d'adresse du navigateur, puis vérifiez que votre compte possède bien le rôle `Propriétaire` sur ce document.
+
+2. Avant de déployer les règles de sécurité, ouvrez la table `Referentiel_Agents` depuis le menu *Données brutes* dans Grist. Remplacez les deux fiches génériques fournies (`Agent Exemple` et `Gestionnaire Exemple`) par les agents et gestionnaires réels de votre service. Veillez à ce que la colonne `Email` corresponde exactement à l'adresse de connexion Grist ou ProConnect de chaque utilisateur, et attribuez la valeur `Gestionnaire` dans la colonne `Role` aux responsables qui doivent accéder à l'espace d'encadrement.
+
+3. Copiez [config_local.example.py](config_local.example.py) vers `config_local.py` (ignoré par Git). Renseignez la connexion à l'API (`GRIST_API_URL`, `GRIST_API_KEY`, qui peuvent aussi être placés dans un fichier `.env` local ou des variables d'environnement), l'identification du document cible (`ORG_ID`, `WORKSPACE_NAME`, `DOC_NAME`, `DOC_ID`, `DOC_URL`), l'identité du service (`SERVICE_NOM`, `CSV_PREFIX`, `EMAIL_PLACEHOLDER`), les listes de référence (`AGENTS_INITIAUX`, `EMAILS_PROPRIETAIRES`, `EMAILS_GESTIONNAIRES`) ainsi que les noms proposés dans la liste déroulante des encadrants à alerter (`CHOIX_ENCADRANT` et `ENCADRANT_PAR_DEFAUT`).
+
+4. Si votre service n'appartient pas au domaine de la police de l'environnement, adaptez les listes de choix métier (`CHOIX_CANAL`, `CHOIX_DOMAINE`, `CHOIX_PRIORITE`, `CHOIX_STATUT`, `CHOIX_DEMARCHE` et `CHOIX_SUITE`) de manière strictement identique aux deux endroits du code où elles sont définies : dans [configurer_colonnes.py](configurer_colonnes.py) et dans [widgets/commun.py](widgets/commun.py).
+
+5. Exécutez les cinq scripts de configuration depuis la racine du dépôt dans l'ordre exact ci-dessous, sans lancer `creer_registre_signalements.py` :
 
 ```bash
 python3 configurer_colonnes.py
@@ -56,7 +73,15 @@ python3 configurer_vues_encadrement.py
 python3 configurer_vues_bonus.py
 ```
 
-5. Partagez enfin le document Grist avec chaque membre de votre équipe en attribuant le rôle `Éditeur` aux agents et gestionnaires, et en réservant le rôle `Propriétaire` aux administrateurs du schéma.
+Le premier script met à jour le schéma, les formules `mailto:` et les choix d'encadrants ; le deuxième sauvegarde les règles existantes dans `sauvegardes_acl/` et applique le cloisonnement ACL ; les trois suivants déploient successivement les écrans agent, l'espace d'encadrement et le pilotage, puis les statistiques et la gestion des agents.
+
+6. Partagez enfin le document dans Grist avec l'ensemble des membres de votre équipe en leur attribuant le rôle Grist `Éditeur`, aussi bien pour les agents que pour les gestionnaires, en réservant le rôle `Propriétaire` aux seuls administrateurs techniques du schéma. Réalisez ensuite une recette fonctionnelle rapide : vérifiez avec un compte `Agent` que seuls les écrans *Nouveau signalement* et *Mes dossiers* sont visibles sans accès aux dossiers des collègues, puis vérifiez avec un compte `Gestionnaire` l'accès complet à *Espace encadrement* et à ses trois sous-écrans (*Pilotage et attribution*, *Statistiques* et *Gestion des agents*).
+
+### Exploitation courante
+
+Au quotidien, la gestion de l'annuaire s'effectue directement depuis l'interface Grist dans la vue *Gestion des agents* pour ajouter un arrivant, mettre à jour une fiche ou basculer un rôle entre `Agent` et `Gestionnaire`. Tout nouvel utilisateur doit également être invité dans le menu *Partager* de Grist avec le rôle `Éditeur` afin de pouvoir ouvrir le classeur.
+
+Lorsqu'une évolution de paramétrage devient nécessaire par la suite (ajout d'un encadrant dans `config_local.py`, ajustement d'une liste déroulante ou mise à jour des widgets), il suffit de relancer `configurer_colonnes.py` puis les scripts `configurer_vues_*.py` concernés depuis le poste d'administration.
 
 ## Tests automatisés
 
@@ -74,6 +99,6 @@ python3 -m pytest tests/ -v
 
 ## Auteur et licence
 
-Auteur originel : **Aguirre Maurin**.
+Auteur originel : **Aguirre Maurin — 2026**.
 
 Ce projet est distribué sous licence **GNU General Public License v3.0 (GPL-3.0)**. Consultez le fichier [LICENSE](LICENSE) pour le texte complet de la licence.
