@@ -43,12 +43,12 @@ Une sauvegarde JSON des règles ACL existantes est automatiquement enregistrée 
 
 Les prérequis se limitent à Python 3.10 ou supérieur et aux bibliothèques `requests` et `pytest`.
 
-Copiez d'abord le modèle de configuration [config_local.example.py](config_local.example.py) vers `config_local.py` (ignoré par Git) et adaptez `ORG_ID`, `WORKSPACE_NAME`, `DOC_NAME`, `DOC_ID`, `DOC_URL`, `AGENTS_INITIAUX`, `EMAILS_PROPRIETAIRES`, `EMAILS_GESTIONNAIRES`, `CHOIX_ENCADRANT` et `ENCADRANT_PAR_DEFAUT` à votre instance Grist. Fournissez ensuite vos identifiants API via les variables d'environnement `GRIST_API_URL` et `GRIST_API_KEY` (ou un fichier `.env` local non versionné).
-
-Exécutez ensuite le déploiement initial sur votre classeur Grist de test ou de production dans l'ordre suivant :
+1. Importez le classeur modèle vierge [templates/registre_signalements_modele.grist](templates/registre_signalements_modele.grist) dans votre espace de travail Grist cible (menu *Importer un document*), relevez son `DOC_ID` et son `DOC_URL`, puis vérifiez que votre compte possède le rôle `Propriétaire`.
+2. Dans la table `Referentiel_Agents` (via *Données brutes*), remplacez les deux fiches d'exemple (`Agent Exemple` et `Gestionnaire Exemple`) par les agents et gestionnaires réels de votre service avec leur adresse courriel Grist exacte.
+3. Copiez [config_local.example.py](config_local.example.py) vers `config_local.py` (ignoré par Git) et adaptez les paramètres de votre service (`ORG_ID`, `DOC_ID`, `DOC_URL`, `SERVICE_NOM`, `CSV_PREFIX`, `EMAIL_PLACEHOLDER`, `AGENTS_INITIAUX`, `EMAILS_PROPRIETAIRES`, `EMAILS_GESTIONNAIRES`, `CHOIX_ENCADRANT` et `ENCADRANT_PAR_DEFAUT`), puis fournissez vos identifiants API via les variables d'environnement `GRIST_API_URL` et `GRIST_API_KEY` (ou un fichier `.env` local non versionné).
+4. Exécutez les scripts de paramétrage sur le classeur importé dans l'ordre suivant (le script `creer_registre_signalements.py` n'est pas nécessaire lorsque vous partez du modèle importé) :
 
 ```bash
-python3 creer_registre_signalements.py
 python3 configurer_colonnes.py
 python3 configurer_droits_signalements.py
 python3 configurer_vues_agent.py
@@ -56,7 +56,7 @@ python3 configurer_vues_encadrement.py
 python3 configurer_vues_bonus.py
 ```
 
-Partagez enfin le document Grist avec chaque membre de votre équipe en attribuant le rôle `Éditeur` aux agents et gestionnaires, et le rôle `Propriétaire` aux administrateurs du schéma.
+5. Partagez enfin le document Grist avec chaque membre de votre équipe en attribuant le rôle `Éditeur` aux agents et gestionnaires, et en réservant le rôle `Propriétaire` aux administrateurs du schéma.
 
 ## Tests automatisés
 
