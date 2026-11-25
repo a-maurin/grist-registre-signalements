@@ -1,0 +1,29 @@
+# Caches Python et tests
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Configuration locale, variables et secrets (non versionnés)
+.env
+.env.*
+config_local.py
+
+# Sauvegardes automatiques d'ACL (conservées en local uniquement)
+sauvegardes_acl/
+
+# Fichiers temporaires et éditeurs
+*.tmp
+*.bak
+*.log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
